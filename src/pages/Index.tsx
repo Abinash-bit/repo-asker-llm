@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Repository, TreeItem, Message, ChatState } from "@/types";
 import RepositoryInput from "@/components/RepositoryInput";
@@ -8,8 +7,7 @@ import ChatInterface from "@/components/ChatInterface";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { GitHubLogoIcon } from "@radix-ui/react-icons";
-import { BrainCircuit, FileWarningIcon } from "lucide-react";
+import { BrainCircuit, FileWarningIcon, Github } from "lucide-react";
 import { fetchRepositoryFiles, fetchFileContent, parseGithubUrl } from "@/services/repositoryService";
 import { processCodeQuestion } from "@/services/aiService";
 import { toast } from "sonner";
@@ -182,7 +180,7 @@ const Index = () => {
               <Card className="h-full flex flex-col overflow-hidden">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <GitHubLogoIcon className="h-4 w-4" />
+                    <Github className="h-4 w-4" />
                     <span>
                       {repository.owner}/{repository.repo}
                     </span>
