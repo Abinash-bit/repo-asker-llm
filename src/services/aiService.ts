@@ -27,9 +27,8 @@ export async function processCodeQuestion(
     
     // Create system message with context about the file
     const fileExtension = currentFilePath?.split('.').pop()?.toLowerCase() || '';
-    const systemMessage: Message = {
-      id: "system",
-      role: "system",
+    const systemMessage = {
+      role: "system" as const, // Type assertion to ensure compatibility
       content: `You are an AI code assistant analyzing a ${fileExtension.toUpperCase()} file. 
 The user is asking about this file:
 \`\`\`${fileExtension}

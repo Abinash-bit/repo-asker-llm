@@ -73,20 +73,29 @@ const ChatInterface = ({ messages, isProcessing, onSendMessage }: ChatInterfaceP
                 )}
                 <div className="whitespace-pre-wrap text-sm overflow-auto">
                   {message.role === "assistant" ? (
-                    <ReactMarkdown 
-                      className="prose prose-sm max-w-none dark:prose-invert prose-code:text-blue-500"
-                      components={{
-                        pre: ({ node, ...props }) => (
-                          <pre className="bg-muted p-2 rounded overflow-auto my-2" {...props} />
-                        ),
-                        code: ({ node, inline, ...props }) => 
-                          inline ? 
-                            <code className="bg-muted py-0.5 px-1 rounded text-xs" {...props} /> : 
-                            <code {...props} />
-                      }}
-                    >
-                      {message.content}
-                    </ReactMarkdown>
+                    <div className="prose prose-sm max-w-none dark:prose-invert prose-code:text-blue-500">
+                      <ReactMarkdown
+                        components={{
+                          pre: ({ node, ...props }) => (
+                            <pre className="bg-muted p-2 rounded overflow-auto my-2" {...props} />
+                          ),
+                          code: ({ node, className, children, ...props }) => {
+                            const match = /language-(\w+)/.exec(className || '');
+                            return !props.inline ? (
+                              <code className="bg-muted py-0.5 px-1 rounded text-xs" {...props}>
+                                {children}
+                              </code>
+                            ) : (
+                              <code className="bg-muted py-0.5 px-1 rounded text-xs" {...props}>
+                                {children}
+                              </code>
+                            );
+                          }
+                        }}
+                      >
+                        {message.content}
+                      </ReactMarkdown>
+                    </div>
                   ) : (
                     message.content
                   )}
