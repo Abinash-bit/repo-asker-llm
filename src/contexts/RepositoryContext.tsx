@@ -1,6 +1,6 @@
 
 import { createContext, useContext, useState, ReactNode } from "react";
-import { Repository, TreeItem, ChatState } from "@/types";
+import { Repository, TreeItem, ChatState, Message } from "@/types";
 import { fetchRepositoryFiles, fetchFileContent, parseGithubUrl } from "@/services/repositoryService";
 import { processCodeQuestion } from "@/services/aiService";
 import { toast } from "sonner";
@@ -95,9 +95,9 @@ export function RepositoryProvider({ children }: { children: ReactNode }) {
   
   // Handle sending a message
   const handleSendMessage = async (content: string) => {
-    const newMessage = {
+    const newMessage: Message = {
       id: Date.now().toString(),
-      role: 'user',
+      role: 'user' as const,
       content
     };
     
@@ -113,9 +113,9 @@ export function RepositoryProvider({ children }: { children: ReactNode }) {
         selectedFile?.path || null
       );
       
-      const assistantMessage = {
+      const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
-        role: 'assistant',
+        role: 'assistant' as const,
         content: response
       };
       
@@ -126,9 +126,9 @@ export function RepositoryProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error("Error processing question:", error);
       
-      const errorMessage = {
+      const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        role: 'assistant',
+        role: 'assistant' as const,
         content: "Sorry, I encountered an error processing your question. Please try again."
       };
       

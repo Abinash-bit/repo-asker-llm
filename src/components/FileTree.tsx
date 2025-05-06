@@ -26,6 +26,7 @@ const FileTree = ({ items, onFileSelect, selectedFilePath }: FileTreeProps) => {
             item={item} 
             onFileSelect={onFileSelect}
             isSelected={selectedFilePath === item.path}
+            selectedFilePath={selectedFilePath}
           />
         ))}
       </ul>
@@ -37,9 +38,10 @@ interface FileTreeItemProps {
   item: TreeItem;
   onFileSelect: (file: TreeItem) => void;
   isSelected: boolean;
+  selectedFilePath: string | null;
 }
 
-const FileTreeItem = ({ item, onFileSelect, isSelected }: FileTreeItemProps) => {
+const FileTreeItem = ({ item, onFileSelect, isSelected, selectedFilePath }: FileTreeItemProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const isDirectory = item.type === 'tree';
   const filename = item.path.split('/').pop() || item.path;
@@ -96,6 +98,7 @@ const FileTreeItem = ({ item, onFileSelect, isSelected }: FileTreeItemProps) => 
                 item={child} 
                 onFileSelect={onFileSelect}
                 isSelected={selectedFilePath === child.path}
+                selectedFilePath={selectedFilePath}
               />
             ))}
         </ul>
