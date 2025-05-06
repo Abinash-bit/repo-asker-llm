@@ -67,6 +67,13 @@ If asked to generate or modify code, provide complete working solutions that fol
     if (!response.ok) {
       const error = await response.json();
       console.error("API Error:", error);
+      
+      // Check for specific error types
+      if (error.error?.type === "insufficient_quota") {
+        toast.error("OpenAI API quota exceeded. Please check your billing status.");
+        return "Your OpenAI account has exceeded its current quota. Please check your billing details on the OpenAI website.";
+      }
+      
       throw new Error(error.error?.message || "Failed to get response from AI service");
     }
     
@@ -89,6 +96,20 @@ export async function testApiKey(apiKey: string): Promise<boolean> {
         "Authorization": `Bearer ${apiKey}`
       }
     });
+    
+    // If we have a 401 unauthorized, it's an invalid key
+    if (response.status === 401) {
+      return false;
+    }
+    
+    // If we have a 429 or quota error, the key is valid but has quota issues
+    if (response.status === 429) {
+      const error = await response.json();
+      if (error.error?.type === "insufficient_quota") {
+        toast.warning("API key is valid, but your account has exceeded its quota. Check your OpenAI billing.");
+      }
+      return true; // The key itself is valid
+    }
     
     return response.ok;
   } catch (error) {
