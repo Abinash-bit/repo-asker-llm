@@ -1,286 +1,49 @@
 
-import { useState } from "react";
-import { Repository, TreeItem, Message, ChatState } from "@/types";
+import { RepositoryProvider } from "@/contexts/RepositoryContext";
+import Header from "@/components/Header";
 import RepositoryInput from "@/components/RepositoryInput";
-import FileTree from "@/components/FileTree";
-import CodeViewer from "@/components/CodeViewer";
-import ChatInterface from "@/components/ChatInterface";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
-import { BrainCircuit, FileWarningIcon, Github, Code, MessageSquare } from "lucide-react";
-import { fetchRepositoryFiles, fetchFileContent, parseGithubUrl } from "@/services/repositoryService";
-import { processCodeQuestion } from "@/services/aiService";
-import { toast } from "sonner";
+import RepositoryErrorCard from "@/components/RepositoryErrorCard";
+import RepositorySidebar from "@/components/RepositorySidebar";
+import ContentTabs from "@/components/ContentTabs";
+import WelcomeCard from "@/components/WelcomeCard";
+import { useRepository } from "@/contexts/RepositoryContext";
 
-const Index = () => {
-  // Repository state
-  const [repository, setRepository] = useState<Repository>({
-    url: "",
-    owner: "",
-    repo: "",
-    files: [],
-    isLoading: false,
-    error: null
-  });
-  
-  // File viewing state
-  const [selectedFile, setSelectedFile] = useState<TreeItem | null>(null);
-  const [fileContent, setFileContent] = useState<string | null>(null);
-  
-  // Chat state
-  const [chat, setChat] = useState<ChatState>({
-    messages: [],
-    isProcessing: false
-  });
+// Separate component that accesses context
+const IndexContent = () => {
+  const { repository, handleRepositorySubmit } = useRepository();
 
-  // Handle repository submission
-  const handleRepositorySubmit = async (url: string) => {
-    setRepository({
-      ...repository,
-      url,
-      isLoading: true,
-      error: null,
-      files: []
-    });
-    setSelectedFile(null);
-    setFileContent(null);
-    setChat({ messages: [], isProcessing: false });
-    
-    try {
-      const { owner, repo } = await parseGithubUrl(url);
-      const files = await fetchRepositoryFiles(owner, repo);
-      
-      setRepository({
-        url,
-        owner,
-        repo,
-        files,
-        isLoading: false,
-        error: null
-      });
-      
-      toast.success(`Successfully loaded repository: ${owner}/${repo}`);
-    } catch (error) {
-      console.error("Error loading repository:", error);
-      setRepository({
-        ...repository,
-        isLoading: false,
-        error: error instanceof Error ? error.message : "Failed to load repository"
-      });
-      
-      toast.error("Failed to load repository. Please check the URL and try again.");
-    }
-  };
-  
-  // Handle file selection
-  const handleFileSelect = async (file: TreeItem) => {
-    if (file.type === 'blob') {
-      setSelectedFile(file);
-      
-      try {
-        const content = await fetchFileContent(repository.owner, repository.repo, file.path);
-        setFileContent(content);
-      } catch (error) {
-        console.error("Error fetching file content:", error);
-        setFileContent(null);
-        toast.error(`Failed to load file: ${file.path}`);
-      }
-    }
-  };
-  
-  // Handle sending a message
-  const handleSendMessage = async (content: string) => {
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content
-    };
-    
-    setChat({
-      messages: [...chat.messages, newMessage],
-      isProcessing: true
-    });
-    
-    try {
-      const response = await processCodeQuestion(
-        [...chat.messages, newMessage],
-        fileContent,
-        selectedFile?.path || null
-      );
-      
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: response
-      };
-      
-      setChat({
-        messages: [...chat.messages, newMessage, assistantMessage],
-        isProcessing: false
-      });
-    } catch (error) {
-      console.error("Error processing question:", error);
-      
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: "Sorry, I encountered an error processing your question. Please try again."
-      };
-      
-      setChat({
-        messages: [...chat.messages, newMessage, errorMessage],
-        isProcessing: false
-      });
-      
-      toast.error("Failed to process your question");
-    }
-  };
-  
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      {/* Header */}
-      <header className="border-b border-border py-4 px-6 bg-card shadow-sm">
-        <div className="container mx-auto">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <BrainCircuit className="h-7 w-7 text-primary" />
-              <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">RepoAsker LLM</h1>
-            </div>
-            <div className="text-sm text-muted-foreground hidden md:block">
-              Explore repositories and chat with code
-            </div>
-          </div>
-        </div>
-      </header>
+    <main className="flex-1 container mx-auto p-4 lg:p-6 overflow-hidden">
+      <div className="mb-6">
+        <RepositoryInput 
+          onSubmit={handleRepositorySubmit} 
+          isLoading={repository.isLoading} 
+        />
+      </div>
       
-      {/* Main content */}
-      <main className="flex-1 container mx-auto p-4 lg:p-6 overflow-hidden">
-        <div className="mb-6">
-          <RepositoryInput 
-            onSubmit={handleRepositorySubmit} 
-            isLoading={repository.isLoading} 
-          />
+      {repository.error && <RepositoryErrorCard error={repository.error} />}
+      
+      {repository.url && !repository.error && (
+        <div className="flex flex-col lg:flex-row h-[calc(100vh-12rem)] gap-4 overflow-hidden">
+          <RepositorySidebar />
+          <ContentTabs />
         </div>
-        
-        {repository.error && (
-          <Card className="mb-6 border-destructive">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2 text-destructive">
-                <FileWarningIcon className="h-5 w-5" />
-                <span>{repository.error}</span>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-        
-        {repository.url && !repository.error && (
-          <div className="flex flex-col lg:flex-row h-[calc(100vh-12rem)] gap-4 overflow-hidden">
-            {/* Repository sidebar */}
-            <div className="w-full lg:w-1/4 overflow-hidden flex flex-col">
-              <Card className="h-full flex flex-col overflow-hidden shadow-sm">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <Github className="h-4 w-4" />
-                    <span className="truncate">
-                      {repository.owner}/{repository.repo}
-                    </span>
-                  </CardTitle>
-                </CardHeader>
-                <Separator />
-                <CardContent className="flex-1 overflow-auto p-2">
-                  {repository.files.length > 0 ? (
-                    <FileTree 
-                      items={repository.files} 
-                      onFileSelect={handleFileSelect}
-                      selectedFilePath={selectedFile?.path || null}
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center h-full text-muted-foreground">
-                      {repository.isLoading ? "Loading files..." : "No files found"}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-            
-            {/* Main content area */}
-            <div className="w-full lg:w-3/4 overflow-hidden flex flex-col">
-              <Tabs defaultValue="code" className="h-full flex flex-col">
-                <TabsList className="mx-auto mb-4">
-                  <TabsTrigger value="code" className="flex items-center gap-2">
-                    <Code size={14} />
-                    <span>Code Viewer</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="chat" className="flex items-center gap-2">
-                    <MessageSquare size={14} />
-                    <span>Chat</span>
-                  </TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="code" className="flex-1 overflow-hidden m-0">
-                  {selectedFile && fileContent ? (
-                    <CodeViewer 
-                      content={fileContent} 
-                      filename={selectedFile.path}
-                    />
-                  ) : (
-                    <Card className="h-full flex items-center justify-center shadow-sm">
-                      <CardContent className="text-center p-8">
-                        <Code className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                        <p className="text-muted-foreground font-medium mb-2">
-                          {repository.isLoading 
-                            ? "Loading repository..." 
-                            : "No file selected"}
-                        </p>
-                        <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-                          {!repository.isLoading && "Select a file from the repository to view its content"}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  )}
-                </TabsContent>
-                
-                <TabsContent value="chat" className="flex-1 overflow-hidden m-0">
-                  <Card className="h-full flex flex-col overflow-hidden shadow-sm">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium">
-                        {selectedFile 
-                          ? `Chat about: ${selectedFile.path}`
-                          : "Select a file to chat about"}
-                      </CardTitle>
-                    </CardHeader>
-                    <Separator />
-                    <CardContent className="flex-1 p-0 overflow-hidden">
-                      <ChatInterface 
-                        messages={chat.messages}
-                        isProcessing={chat.isProcessing}
-                        onSendMessage={handleSendMessage}
-                      />
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              </Tabs>
-            </div>
-          </div>
-        )}
-        
-        {!repository.url && !repository.isLoading && (
-          <Card className="mt-8 shadow-md border-border/50">
-            <CardContent className="p-8 text-center">
-              <div className="bg-primary/10 p-4 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
-                <BrainCircuit className="h-12 w-12 text-primary" />
-              </div>
-              <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">Welcome to RepoAsker LLM</h2>
-              <p className="text-muted-foreground max-w-md mx-auto">
-                Enter a GitHub repository URL above to explore its files and
-                ask questions about the code using an AI assistant.
-              </p>
-            </CardContent>
-          </Card>
-        )}
-      </main>
-    </div>
+      )}
+      
+      {!repository.url && !repository.isLoading && <WelcomeCard />}
+    </main>
+  );
+};
+
+// Main component wrapping everything with the context provider
+const Index = () => {
+  return (
+    <RepositoryProvider>
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+        <IndexContent />
+      </div>
+    </RepositoryProvider>
   );
 };
 
