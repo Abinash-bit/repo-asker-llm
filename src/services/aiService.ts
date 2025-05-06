@@ -1,5 +1,12 @@
 
 import { Message } from "@/types";
+import { toast } from "sonner";
+
+// Default model to use for code assistance
+const DEFAULT_MODEL = "gpt-4o";
+
+// Maximum number of messages to include in the context
+const MAX_CONTEXT_MESSAGES = 10;
 
 export async function processCodeQuestion(
   messages: Message[], 
@@ -7,47 +14,86 @@ export async function processCodeQuestion(
   currentFilePath: string | null
 ): Promise<string> {
   try {
-    // In a real implementation, this would call an API endpoint
-    // that would process the user's question with a language model
+    // Get API key from local storage or environment
+    const apiKey = localStorage.getItem("openai_api_key");
     
-    // For demo purposes, we'll simulate a response
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const lastMessage = messages[messages.length - 1];
+    if (!apiKey) {
+      return "Please set your OpenAI API key in the settings to use the code assistance features.";
+    }
     
     if (!currentFileContent) {
       return "Please select a file from the repository to ask questions about its content.";
     }
     
-    // Simple response based on file extension
+    // Create system message with context about the file
     const fileExtension = currentFilePath?.split('.').pop()?.toLowerCase() || '';
+    const systemMessage: Message = {
+      id: "system",
+      role: "system",
+      content: `You are an AI code assistant analyzing a ${fileExtension.toUpperCase()} file. 
+The user is asking about this file:
+\`\`\`${fileExtension}
+${currentFileContent}
+\`\`\`
+
+Provide helpful, concise explanations about the code. 
+If asked to generate or modify code, provide complete working solutions that follow best practices.`
+    };
     
-    if (lastMessage.content.toLowerCase().includes('what does this file do')) {
-      switch (fileExtension) {
-        case 'js':
-        case 'ts':
-        case 'jsx':
-        case 'tsx':
-          return `This appears to be a ${fileExtension.toUpperCase()} file that contains ${currentFileContent.length} characters of code. It likely defines JavaScript/TypeScript functionality. To provide a more detailed explanation, I would need to analyze the specific content, which would typically be done using a language model like GPT-4.`;
-        case 'css':
-        case 'scss':
-          return `This is a CSS stylesheet file with ${currentFileContent.length} characters. It defines the visual styling for components in the application. In a real implementation, I would analyze the specific styles and their purposes.`;
-        case 'html':
-          return `This is an HTML file that defines the structure of a web page. It contains ${currentFileContent.length} characters of markup. In a full implementation, I would analyze the document structure and explain its purpose.`;
-        case 'md':
-          return `This is a Markdown file, likely containing documentation. It's ${currentFileContent.length} characters long. A proper implementation would interpret the markdown and explain what information it provides.`;
-        default:
-          return `This file has a .${fileExtension} extension and contains ${currentFileContent.length} characters. In a real implementation, I would analyze the content and explain its purpose based on the file type and contents.`;
-      }
+    // Prepare the messages for the API, taking only the last N messages to avoid token limits
+    const recentMessages = messages.slice(-MAX_CONTEXT_MESSAGES);
+    const apiMessages = [
+      systemMessage,
+      ...recentMessages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }))
+    ];
+    
+    // Call the OpenAI API
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: DEFAULT_MODEL,
+        messages: apiMessages,
+        temperature: 0.3,
+        max_tokens: 2048
+      })
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      console.error("API Error:", error);
+      throw new Error(error.error?.message || "Failed to get response from AI service");
     }
     
-    if (lastMessage.content.toLowerCase().includes('explain')) {
-      return `This file contains code that would typically be analyzed in detail by a language model. In a production version, I'd connect to an LLM API to provide a detailed explanation of the specific code patterns, functions, or architectural decisions present in this file.`;
-    }
+    const result = await response.json();
+    return result.choices[0]?.message?.content || "Sorry, I couldn't generate a response.";
     
-    return `I've received your question about the ${currentFilePath} file. In a real implementation, this would be processed by a language model that could analyze the code and provide specific answers. For now, this is a placeholder response - the actual app would integrate with an LLM API.`;
   } catch (error) {
-    console.error("Error processing code question:", error);
-    return "Sorry, there was an error processing your question. Please try again.";
+    console.error("Error processing question:", error);
+    toast.error("Failed to process your question. Please check your API key and try again.");
+    return "Sorry, I encountered an error processing your question. Please check your API key and try again.";
+  }
+}
+
+// Function to test if API key is valid
+export async function testApiKey(apiKey: string): Promise<boolean> {
+  try {
+    const response = await fetch("https://api.openai.com/v1/models", {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`
+      }
+    });
+    
+    return response.ok;
+  } catch (error) {
+    console.error("Error testing API key:", error);
+    return false;
   }
 }

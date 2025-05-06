@@ -1,6 +1,6 @@
 
 import { RepositoryProvider } from "@/contexts/RepositoryContext";
-import Header from "@/components/Header";
+import CustomHeader from "@/components/CustomHeader";
 import RepositoryInput from "@/components/RepositoryInput";
 import RepositoryErrorCard from "@/components/RepositoryErrorCard";
 import RepositorySidebar from "@/components/RepositorySidebar";
@@ -40,7 +40,7 @@ const Index = () => {
   return (
     <RepositoryProvider>
       <div className="min-h-screen flex flex-col bg-background">
-        <Header />
+        <CustomHeader />
         <IndexContent />
       </div>
     </RepositoryProvider>

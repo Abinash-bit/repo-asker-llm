@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SendIcon, User, Bot, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import ReactMarkdown from 'react-markdown';
 
 interface ChatInterfaceProps {
   messages: Message[];
@@ -70,7 +71,26 @@ const ChatInterface = ({ messages, isProcessing, onSendMessage }: ChatInterfaceP
                 ) : (
                   <Bot className="h-5 w-5 mt-1 shrink-0" />
                 )}
-                <div className="whitespace-pre-wrap text-sm">{message.content}</div>
+                <div className="whitespace-pre-wrap text-sm overflow-auto">
+                  {message.role === "assistant" ? (
+                    <ReactMarkdown 
+                      className="prose prose-sm max-w-none dark:prose-invert prose-code:text-blue-500"
+                      components={{
+                        pre: ({ node, ...props }) => (
+                          <pre className="bg-muted p-2 rounded overflow-auto my-2" {...props} />
+                        ),
+                        code: ({ node, inline, ...props }) => 
+                          inline ? 
+                            <code className="bg-muted py-0.5 px-1 rounded text-xs" {...props} /> : 
+                            <code {...props} />
+                      }}
+                    >
+                      {message.content}
+                    </ReactMarkdown>
+                  ) : (
+                    message.content
+                  )}
+                </div>
               </div>
             </div>
           ))
