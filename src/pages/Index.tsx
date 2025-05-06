@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useState } from "react";
 import { Repository, TreeItem, Message, ChatState } from "@/types";
 import RepositoryInput from "@/components/RepositoryInput";
 import FileTree from "@/components/FileTree";
@@ -7,7 +8,7 @@ import ChatInterface from "@/components/ChatInterface";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { BrainCircuit, FileWarningIcon, Github } from "lucide-react";
+import { BrainCircuit, FileWarningIcon, Github, Code, MessageSquare } from "lucide-react";
 import { fetchRepositoryFiles, fetchFileContent, parseGithubUrl } from "@/services/repositoryService";
 import { processCodeQuestion } from "@/services/aiService";
 import { toast } from "sonner";
@@ -137,16 +138,16 @@ const Index = () => {
   };
   
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
-      <header className="border-b border-border p-4">
+      <header className="border-b border-border py-4 px-6 bg-card shadow-sm">
         <div className="container mx-auto">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <BrainCircuit className="h-6 w-6 text-primary" />
-              <h1 className="text-xl font-bold">RepoAsker LLM</h1>
+            <div className="flex items-center space-x-3">
+              <BrainCircuit className="h-7 w-7 text-primary" />
+              <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">RepoAsker LLM</h1>
             </div>
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm text-muted-foreground hidden md:block">
               Explore repositories and chat with code
             </div>
           </div>
@@ -154,7 +155,7 @@ const Index = () => {
       </header>
       
       {/* Main content */}
-      <main className="flex-1 container mx-auto p-4 overflow-hidden">
+      <main className="flex-1 container mx-auto p-4 lg:p-6 overflow-hidden">
         <div className="mb-6">
           <RepositoryInput 
             onSubmit={handleRepositorySubmit} 
@@ -177,11 +178,11 @@ const Index = () => {
           <div className="flex flex-col lg:flex-row h-[calc(100vh-12rem)] gap-4 overflow-hidden">
             {/* Repository sidebar */}
             <div className="w-full lg:w-1/4 overflow-hidden flex flex-col">
-              <Card className="h-full flex flex-col overflow-hidden">
+              <Card className="h-full flex flex-col overflow-hidden shadow-sm">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium flex items-center gap-2">
                     <Github className="h-4 w-4" />
-                    <span>
+                    <span className="truncate">
                       {repository.owner}/{repository.repo}
                     </span>
                   </CardTitle>
@@ -207,8 +208,14 @@ const Index = () => {
             <div className="w-full lg:w-3/4 overflow-hidden flex flex-col">
               <Tabs defaultValue="code" className="h-full flex flex-col">
                 <TabsList className="mx-auto mb-4">
-                  <TabsTrigger value="code">Code Viewer</TabsTrigger>
-                  <TabsTrigger value="chat">Chat</TabsTrigger>
+                  <TabsTrigger value="code" className="flex items-center gap-2">
+                    <Code size={14} />
+                    <span>Code Viewer</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="chat" className="flex items-center gap-2">
+                    <MessageSquare size={14} />
+                    <span>Chat</span>
+                  </TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="code" className="flex-1 overflow-hidden m-0">
@@ -218,12 +225,16 @@ const Index = () => {
                       filename={selectedFile.path}
                     />
                   ) : (
-                    <Card className="h-full flex items-center justify-center">
-                      <CardContent className="text-center p-6">
-                        <p className="text-muted-foreground">
+                    <Card className="h-full flex items-center justify-center shadow-sm">
+                      <CardContent className="text-center p-8">
+                        <Code className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                        <p className="text-muted-foreground font-medium mb-2">
                           {repository.isLoading 
                             ? "Loading repository..." 
-                            : "Select a file from the repository to view its content"}
+                            : "No file selected"}
+                        </p>
+                        <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                          {!repository.isLoading && "Select a file from the repository to view its content"}
                         </p>
                       </CardContent>
                     </Card>
@@ -231,7 +242,7 @@ const Index = () => {
                 </TabsContent>
                 
                 <TabsContent value="chat" className="flex-1 overflow-hidden m-0">
-                  <Card className="h-full flex flex-col overflow-hidden">
+                  <Card className="h-full flex flex-col overflow-hidden shadow-sm">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm font-medium">
                         {selectedFile 
@@ -255,10 +266,12 @@ const Index = () => {
         )}
         
         {!repository.url && !repository.isLoading && (
-          <Card className="mt-8">
+          <Card className="mt-8 shadow-md border-border/50">
             <CardContent className="p-8 text-center">
-              <BrainCircuit className="h-16 w-16 mx-auto mb-4 text-primary opacity-80" />
-              <h2 className="text-2xl font-bold mb-2">Welcome to RepoAsker LLM</h2>
+              <div className="bg-primary/10 p-4 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
+                <BrainCircuit className="h-12 w-12 text-primary" />
+              </div>
+              <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">Welcome to RepoAsker LLM</h2>
               <p className="text-muted-foreground max-w-md mx-auto">
                 Enter a GitHub repository URL above to explore its files and
                 ask questions about the code using an AI assistant.

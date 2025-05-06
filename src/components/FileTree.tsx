@@ -62,7 +62,7 @@ const FileTreeItem = ({ item, onFileSelect, isSelected }: FileTreeItemProps) => 
     <li>
       <div 
         className={cn(
-          "flex items-center cursor-pointer hover:bg-secondary/50 rounded px-1",
+          "flex items-center cursor-pointer hover:bg-secondary/50 rounded px-1 py-1.5 transition-colors",
           isSelected && !isDirectory ? "bg-secondary text-primary font-medium" : ""
         )}
         onClick={handleFileClick}
@@ -77,7 +77,7 @@ const FileTreeItem = ({ item, onFileSelect, isSelected }: FileTreeItemProps) => 
         ) : (
           <FileIcon size={16} className="mr-1 ml-4 text-blue-300" />
         )}
-        <span>{filename}</span>
+        <span className="truncate">{filename}</span>
       </div>
       
       {isDirectory && isExpanded && item.children && item.children.length > 0 && (
