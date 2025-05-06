@@ -80,11 +80,7 @@ const ChatInterface = ({ messages, isProcessing, onSendMessage }: ChatInterfaceP
                             <pre className="bg-muted p-2 rounded overflow-auto my-2" {...props} />
                           ),
                           code: ({ node, className, children, ...props }) => {
-                            return props.inline ? (
-                              <code className="bg-muted py-0.5 px-1 rounded text-xs" {...props}>
-                                {children}
-                              </code>
-                            ) : (
+                            return (
                               <code className="bg-muted py-0.5 px-1 rounded text-xs" {...props}>
                                 {children}
                               </code>
